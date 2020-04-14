@@ -282,7 +282,7 @@ def _bootstrap_distribution(values_lists, stat_func_lists,
     return results
 
 
-def bootstrap(values, stat_func, denominator_values=None, alpha=0.05,
+def bootstrap(values, stat_func, denominator_values=None, weights=None, alpha=0.05,
               num_iterations=10000, iteration_batch_size=10, is_pivotal=True,
               num_threads=1, return_distribution=False):
     '''Returns bootstrap estimate.
@@ -303,6 +303,7 @@ def bootstrap(values, stat_func, denominator_values=None, alpha=0.05,
                     SUM(revenue) / SUM(clicks)
                 mean cost per click for each
                     MEAN(revenue / clicks)
+        weights: optional array that assigns values importances.
         alpha: alpha value representing the confidence interval.
             Defaults to 0.05, i.e., 95th-CI.
         num_iterations: number of bootstrap iterations to run. The higher this
@@ -329,7 +330,9 @@ def bootstrap(values, stat_func, denominator_values=None, alpha=0.05,
         values_lists = [values]
         stat_func_lists = [stat_func]
 
-        def do_division(x):
+        def do_division(x, weight=None):
+            if weight is not None:
+                return x * weight
             return x
 
         stat_val = stat_func(values)[0]
@@ -337,10 +340,17 @@ def bootstrap(values, stat_func, denominator_values=None, alpha=0.05,
         values_lists = [values, denominator_values]
         stat_func_lists = [stat_func] * 2
 
-        def do_division(num, denom):
-            return num / denom
+        def do_division(num, denom, weight=None):
+            if weight is not None:
+                return weight * num / denom
+            else:
+                return num / denom
 
         stat_val = stat_func(values)[0] / stat_func(denominator_values)[0]
+
+    if weights is not None:
+        values_lists.append(weights)
+        stat_func_lists.append(stat_func)
 
     distribution_results = _bootstrap_distribution(values_lists,
                                                    stat_func_lists,

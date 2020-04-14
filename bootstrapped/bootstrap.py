@@ -351,6 +351,7 @@ def bootstrap(values, stat_func, denominator_values=None, weights=None, alpha=0.
     if weights is not None:
         values_lists.append(weights)
         stat_func_lists.append(stat_func)
+        stat_val = stat_func(weights)[0] * stat_val
 
     distribution_results = _bootstrap_distribution(values_lists,
                                                    stat_func_lists,
